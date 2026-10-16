@@ -28,6 +28,7 @@ public class RedisCacheConfig {
                 .cacheDefaults(defaults)
                 .withInitialCacheConfigurations(Map.of(
                         "popularAirports", defaults,
+                        "fxRates", baseConfig().entryTtl(Duration.ofHours(24)),
                         // ponytail: fares stale fast; bump when offer expiry is modeled
                         "duffelOffers", baseConfig().entryTtl(Duration.ofMinutes(5))
                 ))
