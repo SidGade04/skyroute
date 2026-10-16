@@ -14,5 +14,7 @@ public record FlightSearchRequest(
     List<Double> bags,
     String cabinClass,
     Integer page,
-    Integer size
+    Integer size,
+    /** Owner airline name; null/blank = all */
+    String airline
 ) {}

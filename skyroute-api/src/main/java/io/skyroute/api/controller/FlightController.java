@@ -1,13 +1,16 @@
 package io.skyroute.api.controller;
 
 import io.skyroute.api.model.dto.request.FlightSearchRequest;
+import io.skyroute.api.model.dto.response.FlightSearchPage;
 import io.skyroute.api.model.dto.response.FlightSearchResponse;
-import io.skyroute.api.model.dto.response.PaginatedResponse;
 import io.skyroute.api.service.FlightSearchService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/flights")
@@ -24,10 +27,21 @@ public class FlightController {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<PaginatedResponse<FlightSearchResponse>> searchFlights(
+    public ResponseEntity<FlightSearchPage> searchFlights(
             @RequestBody FlightSearchRequest request
     ) {
-        List<FlightSearchResponse> results = flightSearchService.searchAndCalculate(request);
+        List<FlightSearchResponse> all = flightSearchService.searchAndCalculate(request);
+
+        Map<String, FlightSearchPage.Airline> byName = new LinkedHashMap<>();
+        all.forEach(o -> byName.putIfAbsent(o.airlineName(), new FlightSearchPage.Airline(o.airlineName(), o.airlineLogoUrl())));
+        List<FlightSearchPage.Airline> airlines = byName.values().stream()
+                .sorted(Comparator.comparing(FlightSearchPage.Airline::name))
+                .toList();
+
+        String airline = request.airline();
+        List<FlightSearchResponse> results = airline == null || airline.isBlank()
+                ? all
+                : all.stream().filter(o -> airline.equals(o.airlineName())).toList();
 
         int page = request.page() != null ? Math.max(request.page(), 0) : DEFAULT_PAGE;
         int size = request.size() != null ? Math.max(request.size(), 1) : DEFAULT_SIZE;
@@ -36,12 +50,13 @@ public class FlightController {
         int from = Math.min(page * size, totalElements);
         int to = Math.min(from + size, totalElements);
 
-        return ResponseEntity.ok(new PaginatedResponse<>(
+        return ResponseEntity.ok(new FlightSearchPage(
                 results.subList(from, to),
                 page,
                 size,
                 totalElements,
-                totalPages
+                totalPages,
+                airlines
         ));
     }
 }
