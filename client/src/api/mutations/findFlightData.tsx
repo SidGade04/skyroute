@@ -1,13 +1,11 @@
 import { api } from '@/api/client'
 import type {
+  FlightSearchPage,
   FlightSearchRequest,
   FlightSearchResponse,
-  PaginatedResponse,
 } from '@/types/skyroute.types'
 
-function normalize(
-  data: PaginatedResponse<FlightSearchResponse> | FlightSearchResponse[],
-): PaginatedResponse<FlightSearchResponse> {
+function normalize(data: FlightSearchPage | FlightSearchResponse[]): FlightSearchPage {
   // ponytail: tolerate old API that returned a bare array
   if (Array.isArray(data)) {
     return {
@@ -16,6 +14,7 @@ function normalize(
       size: data.length,
       totalElements: data.length,
       totalPages: data.length > 0 ? 1 : 0,
+      airlines: [],
     }
   }
   return {
@@ -24,15 +23,12 @@ function normalize(
     size: data?.size ?? 0,
     totalElements: data?.totalElements ?? 0,
     totalPages: data?.totalPages ?? 0,
+    airlines: data?.airlines ?? [],
   }
 }
 
-export async function findFlightData(
-  request: FlightSearchRequest,
-): Promise<PaginatedResponse<FlightSearchResponse>> {
-  const { data } = await api.post<
-    PaginatedResponse<FlightSearchResponse> | FlightSearchResponse[]
-  >('/api/v1/flights/search', {
+export async function findFlightData(request: FlightSearchRequest): Promise<FlightSearchPage> {
+  const { data } = await api.post<FlightSearchPage | FlightSearchResponse[]>('/api/v1/flights/search', {
     ...request,
     adults: request.adults ?? 1,
     children: request.children ?? 0,

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowLeft, ArrowRight, ArrowRightLeft, Search } from 'lucide-react'
 import hero from '@/assets/hero.jpg'
 import { findFlightData } from '@/api/mutations/findFlightData'
+import { AirlineFilter } from '@/components/search/AirlineFilter'
 import { AirportCombobox } from '@/components/search/AirportCombobox'
 import { BaggageControlBar } from '@/components/search/BaggageControlBar'
 import { CabinClassFilter } from '@/components/search/CabinClassFilter'
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { formatDateLabel } from '@/lib/utils'
-import type { CabinClass, FlightSearchRequest, FlightSearchResponse } from '@/types/skyroute.types'
+import type { AirlineOption, CabinClass, FlightSearchRequest, FlightSearchResponse } from '@/types/skyroute.types'
 
 const PAGE_SIZE = 10
 
@@ -39,6 +40,7 @@ export function SearchPage() {
   const today = todayIso()
   const [params, setParams] = useState<FlightSearchRequest>(defaults)
   const [offers, setOffers] = useState<FlightSearchResponse[]>([])
+  const [airlines, setAirlines] = useState<AirlineOption[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
@@ -56,6 +58,7 @@ export function SearchPage() {
         size: request.size ?? PAGE_SIZE,
       })
       setOffers(data.content ?? [])
+      setAirlines(data.airlines)
       setPage(data.page ?? 0)
       setTotalPages(data.totalPages ?? 0)
       setTotalElements(data.totalElements ?? 0)
@@ -98,7 +101,7 @@ export function SearchPage() {
               style={{ animationDelay: '120ms' }}
               onSubmit={(e) => {
                 e.preventDefault()
-                const next = { ...params, page: 0, size: PAGE_SIZE }
+                const next = { ...params, airline: null, page: 0, size: PAGE_SIZE }
                 setParams(next)
                 void runSearch(next)
               }}
@@ -210,6 +213,15 @@ export function SearchPage() {
               value={params.cabinClass ?? 'economy'}
               onChange={(cabinClass: CabinClass) => {
                 const next = { ...params, cabinClass, page: 0, size: PAGE_SIZE }
+                setParams(next)
+                void runSearch(next)
+              }}
+            />
+            <AirlineFilter
+              airlines={airlines}
+              value={params.airline ?? null}
+              onChange={(airline) => {
+                const next = { ...params, airline, page: 0, size: PAGE_SIZE }
                 setParams(next)
                 void runSearch(next)
               }}

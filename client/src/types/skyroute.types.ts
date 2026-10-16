@@ -22,6 +22,13 @@ export interface FlightSearchRequest {
   cabinClass?: CabinClass
   page?: number
   size?: number
+  /** Airline name; null = all */
+  airline?: string | null
+}
+
+export interface AirlineOption {
+  name: string
+  logoUrl: string | null
 }
 
 export interface FlightSlice {
@@ -66,6 +73,10 @@ export interface PaginatedResponse<T> {
   size: number
   totalElements: number
   totalPages: number
+}
+
+export interface FlightSearchPage extends PaginatedResponse<FlightSearchResponse> {
+  airlines: AirlineOption[]
 }
 
 // rendezvous (still mock UI)
