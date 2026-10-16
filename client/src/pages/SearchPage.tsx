@@ -1,34 +1,80 @@
 import { useState } from 'react'
-import { ArrowRightLeft, Search } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowRightLeft, Search } from 'lucide-react'
 import hero from '@/assets/hero.jpg'
+import { findFlightData } from '@/api/mutations/findFlightData'
 import { AirportCombobox } from '@/components/search/AirportCombobox'
 import { BaggageControlBar } from '@/components/search/BaggageControlBar'
+import { CabinClassFilter } from '@/components/search/CabinClassFilter'
 import { FlightOfferCard } from '@/components/search/FlightOfferCard'
+import { PassengerFilter } from '@/components/search/PassengerFilter'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
-import { MOCK_OFFERS } from '@/lib/mock-data'
-import { sortByTrueCost } from '@/lib/truecost-client'
 import { formatDateLabel } from '@/lib/utils'
-import type { BaggageSelection, SearchParams } from '@/types/skyroute.types'
+import type { CabinClass, FlightSearchRequest, FlightSearchResponse } from '@/types/skyroute.types'
 
-const defaultBags: BaggageSelection = { personalItem: true, carryOn: 1, checked: 0 }
+const PAGE_SIZE = 10
+
+// ponytail: local calendar day only; fine for UX min-date
+const todayIso = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const defaults: FlightSearchRequest = {
+  origin: 'DXB',
+  destination: 'LHR',
+  departureDate: '2026-11-12',
+  returnDate: '2026-11-15',
+  adults: 1,
+  children: 0,
+  infants: 0,
+  bags: [],
+  cabinClass: 'economy',
+  page: 0,
+  size: PAGE_SIZE,
+}
 
 export function SearchPage() {
-  const [params, setParams] = useState<SearchParams>({
-    origin: 'DXB',
-    destination: 'LHR',
-    departureDate: '2026-11-12',
-    returnDate: '2026-11-15',
-    passengers: 1,
-  })
-  const [bags, setBags] = useState(defaultBags)
+  const today = todayIso()
+  const [params, setParams] = useState<FlightSearchRequest>(defaults)
+  const [offers, setOffers] = useState<FlightSearchResponse[]>([])
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
   const [searched, setSearched] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const offers = sortByTrueCost(
-    MOCK_OFFERS.map((o) => ({ ...o, origin: params.origin, destination: params.destination })),
-    bags,
-  )
+  async function runSearch(request: FlightSearchRequest) {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await findFlightData({
+        ...request,
+        page: request.page ?? 0,
+        size: request.size ?? PAGE_SIZE,
+      })
+      setOffers(data.content ?? [])
+      setPage(data.page ?? 0)
+      setTotalPages(data.totalPages ?? 0)
+      setTotalElements(data.totalElements ?? 0)
+      setSearched(true)
+    } catch {
+      setError('Search failed')
+      setOffers([])
+      setTotalPages(0)
+      setTotalElements(0)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function goToPage(nextPage: number) {
+    const next = { ...params, page: nextPage, size: PAGE_SIZE }
+    setParams(next)
+    void runSearch(next)
+  }
 
   return (
     <>
@@ -52,7 +98,9 @@ export function SearchPage() {
               style={{ animationDelay: '120ms' }}
               onSubmit={(e) => {
                 e.preventDefault()
-                setSearched(true)
+                const next = { ...params, page: 0, size: PAGE_SIZE }
+                setParams(next)
+                void runSearch(next)
               }}
             >
               <AirportCombobox
@@ -86,11 +134,15 @@ export function SearchPage() {
                   </Label>
                   <DatePicker
                     value={params.departureDate}
+                    min={today}
                     onChange={(departureDate) =>
                       setParams((p) => ({
                         ...p,
                         departureDate,
-                        returnDate: departureDate > p.returnDate ? departureDate : p.returnDate,
+                        returnDate:
+                          p.returnDate && departureDate > p.returnDate
+                            ? departureDate
+                            : p.returnDate,
                       }))
                     }
                   />
@@ -100,15 +152,15 @@ export function SearchPage() {
                     Return
                   </Label>
                   <DatePicker
-                    value={params.returnDate}
-                    min={params.departureDate}
+                    value={params.returnDate ?? ''}
+                    min={params.departureDate > today ? params.departureDate : today}
                     onChange={(returnDate) => setParams((p) => ({ ...p, returnDate }))}
                   />
                 </div>
               </div>
-              <Button type="submit" size="lg" className="h-9">
+              <Button type="submit" size="lg" className="h-9" disabled={loading}>
                 <Search data-icon="inline-start" />
-                Search
+                {loading ? 'Searching…' : 'Search'}
               </Button>
             </form>
           </div>
@@ -116,26 +168,96 @@ export function SearchPage() {
       ) : (
         <section className="mx-auto max-w-4xl px-5 py-8 md:px-8">
           <div className="mb-6">
-            <Button type="button" variant="link" className="mb-2 h-auto px-0" onClick={() => setSearched(false)}>
+            <Button
+              type="button"
+              variant="link"
+              className="mb-2 h-auto px-0"
+              onClick={() => setSearched(false)}
+            >
               ← Edit search
             </Button>
             <h1 className="font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight">
               {params.origin} → {params.destination}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {formatDateLabel(params.departureDate)} · {formatDateLabel(params.returnDate)} · {params.passengers} passenger · sorted by TrueCost™
+              {formatDateLabel(params.departureDate)}
+              {params.returnDate ? ` · ${formatDateLabel(params.returnDate)}` : ''} ·{' '}
+              {(params.adults ?? 1) + (params.children ?? 0) + (params.infants ?? 0)} passenger
+              {(params.adults ?? 1) + (params.children ?? 0) + (params.infants ?? 0) !== 1 ? 's' : ''}
             </p>
           </div>
 
-          <div className="mb-6">
-            <BaggageControlBar value={bags} onChange={setBags} />
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <PassengerFilter
+              adults={params.adults ?? 1}
+              children={params.children ?? 0}
+              infants={params.infants ?? 0}
+              onChange={(pax) => {
+                const next = { ...params, ...pax, page: 0, size: PAGE_SIZE }
+                setParams(next)
+                void runSearch(next)
+              }}
+            />
+            <BaggageControlBar
+              bags={params.bags ?? []}
+              onChange={(bags) => {
+                const next = { ...params, bags, page: 0, size: PAGE_SIZE }
+                setParams(next)
+                void runSearch(next)
+              }}
+            />
+            <CabinClassFilter
+              value={params.cabinClass ?? 'economy'}
+              onChange={(cabinClass: CabinClass) => {
+                const next = { ...params, cabinClass, page: 0, size: PAGE_SIZE }
+                setParams(next)
+                void runSearch(next)
+              }}
+            />
           </div>
 
+          {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
+          {loading && <p className="mb-4 text-sm text-muted-foreground">Updating…</p>}
+
           <div>
+            {!loading && offers.length === 0 && (
+              <p className="text-sm text-muted-foreground">No offers found.</p>
+            )}
             {offers.map((offer, i) => (
-              <FlightOfferCard key={offer.id} offer={offer} bags={bags} index={i} />
+              <FlightOfferCard key={offer.offerId ?? i} offer={offer} index={i} />
             ))}
           </div>
+
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                Page {page + 1} of {totalPages}
+                {totalElements > 0 ? ` · ${totalElements} offers` : ''}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={loading || page <= 0}
+                  onClick={() => goToPage(page - 1)}
+                >
+                  <ArrowLeft data-icon="inline-start" />
+                  Prev
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={loading || page >= totalPages - 1}
+                  onClick={() => goToPage(page + 1)}
+                >
+                  Next
+                  <ArrowRight data-icon="inline-end" />
+                </Button>
+              </div>
+            </div>
+          )}
         </section>
       )}
     </>

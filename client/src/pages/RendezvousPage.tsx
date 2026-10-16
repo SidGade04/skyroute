@@ -3,8 +3,47 @@ import { HubComparisonCard } from '@/components/rendezvous/HubComparisonCard'
 import { MultiOriginBuilder } from '@/components/rendezvous/MultiOriginBuilder'
 import { OptimizationModeTabs } from '@/components/rendezvous/OptimizationModeTabs'
 import { Button } from '@/components/ui/button'
-import { MOCK_HUBS } from '@/lib/mock-data'
-import type { OptimizationMode, RendezvousOrigin } from '@/types/skyroute.types'
+import type { HubOption, OptimizationMode, RendezvousOrigin } from '@/types/skyroute.types'
+
+// ponytail: rendezvous API not wired; static ranking only
+const HUBS: HubOption[] = [
+  {
+    hub: 'IST',
+    city: 'Istanbul',
+    totalCost: 1840,
+    variance: 42,
+    avgDurationMinutes: 510,
+    perOrigin: [
+      { origin: 'DXB', cost: 290, durationMinutes: 270 },
+      { origin: 'LHR', cost: 310, durationMinutes: 230 },
+      { origin: 'JFK', cost: 640, durationMinutes: 620 },
+    ],
+  },
+  {
+    hub: 'AMS',
+    city: 'Amsterdam',
+    totalCost: 1965,
+    variance: 18,
+    avgDurationMinutes: 545,
+    perOrigin: [
+      { origin: 'DXB', cost: 420, durationMinutes: 430 },
+      { origin: 'LHR', cost: 180, durationMinutes: 75 },
+      { origin: 'JFK', cost: 565, durationMinutes: 450 },
+    ],
+  },
+  {
+    hub: 'CDG',
+    city: 'Paris',
+    totalCost: 2110,
+    variance: 95,
+    avgDurationMinutes: 520,
+    perOrigin: [
+      { origin: 'DXB', cost: 380, durationMinutes: 420 },
+      { origin: 'LHR', cost: 145, durationMinutes: 70 },
+      { origin: 'JFK', cost: 720, durationMinutes: 470 },
+    ],
+  },
+]
 
 export function RendezvousPage() {
   const [origins, setOrigins] = useState<RendezvousOrigin[]>([
@@ -16,9 +55,10 @@ export function RendezvousPage() {
   const [ran, setRan] = useState(false)
 
   const hubs = useMemo(() => {
-    const copy = [...MOCK_HUBS]
+    const copy = [...HUBS]
     if (mode === 'fair_split') copy.sort((a, b) => a.variance - b.variance)
-    else if (mode === 'duration_balance') copy.sort((a, b) => a.avgDurationMinutes - b.avgDurationMinutes)
+    else if (mode === 'duration_balance')
+      copy.sort((a, b) => a.avgDurationMinutes - b.avgDurationMinutes)
     else copy.sort((a, b) => a.totalCost - b.totalCost)
     return copy
   }, [mode])
