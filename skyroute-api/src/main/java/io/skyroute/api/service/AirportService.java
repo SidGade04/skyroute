@@ -3,6 +3,7 @@ package io.skyroute.api.service;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -33,11 +34,15 @@ public class AirportService {
                 .toList();
     }
 
+    @Cacheable(value = "popularAirports", key = "#limit")
     public List<AirportDTO> findPopular(int limit) {
-        return airportRepository.findPopular(PageRequest.of(0, Math.min(Math.max(limit, 1), 20)))
-                .stream()
-                .map(AirportDTO::from)
-                .toList();
+        // ArrayList — ImmutableCollections from toList() fails Redis deserialize
+        return new java.util.ArrayList<>(
+                airportRepository.findPopular(PageRequest.of(0, Math.min(Math.max(limit, 1), 20)))
+                        .stream()
+                        .map(AirportDTO::from)
+                        .toList()
+        );
     }
 
     public Optional<AirportDTO> findByIata(String iata) {

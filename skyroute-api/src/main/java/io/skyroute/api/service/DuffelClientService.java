@@ -2,11 +2,11 @@ package io.skyroute.api.service;
 
 import io.skyroute.api.exception.DuffelApiException;
 import io.skyroute.api.model.dto.request.DuffelOfferRequest;
+import io.skyroute.api.model.dto.response.DuffelRawResponse;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-
-import io.skyroute.api.model.dto.response.DuffelRawResponse;
 
 @Service
 public class DuffelClientService {
@@ -24,13 +24,15 @@ public class DuffelClientService {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, resp) -> {
                     throw new DuffelApiException(
-                        "Duffel API error: " + resp.getStatusText(), 
+                        "Duffel API error: " + resp.getStatusText(),
                         resp.getStatusCode().value()
                     );
                 })
                 .body(String.class);
     }
 
+    // key = route/dates/pax/cabin only (DuffelOfferRequest has no bags/page)
+    @Cacheable(cacheNames = "duffelOffers", key = "#requestPayload.toString()")
     public DuffelRawResponse fetchOffers(DuffelOfferRequest requestPayload) {
         return duffelRestClient.post()
                 .uri("/air/offer_requests?return_offers=true")
@@ -38,7 +40,7 @@ public class DuffelClientService {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, resp) -> {
                     throw new DuffelApiException(
-                        "Duffel API error: " + resp.getStatusText(), 
+                        "Duffel API error: " + resp.getStatusText(),
                         resp.getStatusCode().value()
                     );
                 })
