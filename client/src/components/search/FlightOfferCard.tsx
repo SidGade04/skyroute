@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { formatIsoDuration, formatMoney, formatTime } from '@/lib/utils'
+import { formatIsoDuration, formatTime } from '@/lib/utils'
+import { useCurrency } from '@/components/common/CurrencyDropdown'
 import type { FlightSearchResponse } from '@/types/skyroute.types'
 
 type Props = {
@@ -12,6 +13,7 @@ export function FlightOfferCard({ offer, index }: Props) {
   const slices = offer.slices ?? []
   const b = offer.breakdown
   const currency = offer.currency
+  const { money } = useCurrency()
 
   return (
     <Card className="offer-enter mb-3" style={{ animationDelay: `${index * 60}ms` }}>
@@ -26,7 +28,7 @@ export function FlightOfferCard({ offer, index }: Props) {
 
           <div className="shrink-0 text-right">
             <div className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight md:text-3xl">
-              {formatMoney(Number(offer.totalPrice), currency)}
+              {money(Number(offer.totalPrice), currency)}
             </div>
             {b && (
               <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -78,11 +80,11 @@ export function FlightOfferCard({ offer, index }: Props) {
           <div className="space-y-1 border-t pt-3 text-xs text-muted-foreground">
             <div className="flex justify-between gap-4">
               <span>Fare</span>
-              <span>{formatMoney(Number(b.fare) || 0, currency)}</span>
+              <span>{money(Number(b.fare) || 0, currency)}</span>
             </div>
             <div className="flex justify-between gap-4">
               <span>Taxes</span>
-              <span>{formatMoney(Number(b.taxes) || 0, currency)}</span>
+              <span>{money(Number(b.taxes) || 0, currency)}</span>
             </div>
             <div className="flex justify-between gap-4">
               <span>
@@ -93,14 +95,14 @@ export function FlightOfferCard({ offer, index }: Props) {
               </span>
               <span>
                 {(Number(b.baggageFees) || 0) > 0
-                  ? `+${formatMoney(Number(b.baggageFees) || 0, currency)}`
+                  ? `+${money(Number(b.baggageFees) || 0, currency)}`
                   : 'included'}
               </span>
             </div>
             {b.infantNote && <p className="pt-1 text-[11px] text-muted-foreground/80">{b.infantNote}</p>}
             <div className="flex justify-between gap-4 border-t pt-1 font-[family-name:var(--font-display)] text-sm font-semibold text-foreground">
               <span>Total</span>
-              <span>{formatMoney(Number(b.total ?? offer.totalPrice) || 0, currency)}</span>
+              <span>{money(Number(b.total ?? offer.totalPrice) || 0, currency)}</span>
             </div>
           </div>
         )}
