@@ -11,7 +11,8 @@ public record FlightSearchResponse(
     BigDecimal baggageFees,
     BigDecimal totalPrice,
     String currency,
-    List<FlightSliceDTO> slices
+    List<FlightSliceDTO> slices,
+    PriceBreakdown breakdown
 ) {
     public record FlightSliceDTO(
         String originCode,
@@ -19,5 +20,18 @@ public record FlightSearchResponse(
         String departureTime,
         String arrivalTime,
         String duration
+    ) {}
+
+    public record PriceBreakdown(
+        BigDecimal fare,
+        BigDecimal taxes,
+        BigDecimal baggageFees,
+        BigDecimal total,
+        int adults,
+        int children,
+        int infants,
+        int includedBags,
+        int extraBags,
+        String infantNote
     ) {}
 }

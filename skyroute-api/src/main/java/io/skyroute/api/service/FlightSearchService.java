@@ -5,6 +5,7 @@ import io.skyroute.api.model.dto.request.FlightSearchRequest;
 import io.skyroute.api.model.dto.response.DuffelRawResponse;
 import io.skyroute.api.model.dto.response.FlightSearchResponse;
 import io.skyroute.api.model.dto.response.FlightSearchResponse.FlightSliceDTO;
+import io.skyroute.api.model.dto.response.FlightSearchResponse.PriceBreakdown;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -13,6 +14,13 @@ import java.util.List;
 
 @Service
 public class FlightSearchService {
+
+    // ponytail: fixed ages until UI collects DOB; airlines bracket from these
+    private static final int DEFAULT_CHILD_AGE = 7;
+    private static final int DEFAULT_INFANT_AGE = 1;
+    private static final double FALLBACK_BAG_FEE = 35.0;
+    private static final double FALLBACK_INCLUDED_KG = 23.0;
+    private static final double OVERWEIGHT_PER_KG = 10.0;
 
     private final DuffelClientService duffelClient;
 
@@ -50,10 +58,20 @@ public class FlightSearchService {
             ));
         }
 
-        int adultCount = Math.max(1, request.adults());
+        int adults = Math.max(1, request.adults());
+        int children = request.children() == null ? 0 : Math.max(0, request.children());
+        int infants = request.infants() == null ? 0 : Math.max(0, Math.min(request.infants(), adults));
+
         List<DuffelOfferRequest.Passenger> passengers = new ArrayList<>();
-        for (int i = 0; i < adultCount; i++) {
-            passengers.add(new DuffelOfferRequest.Passenger("adult"));
+        for (int i = 0; i < adults; i++) {
+            passengers.add(DuffelOfferRequest.Passenger.adult());
+        }
+        for (int i = 0; i < children; i++) {
+            passengers.add(DuffelOfferRequest.Passenger.aged(DEFAULT_CHILD_AGE));
+        }
+        for (int i = 0; i < infants; i++) {
+            // age 1 → airline applies lap-infant / infant bracket (not a guessed fee)
+            passengers.add(DuffelOfferRequest.Passenger.aged(DEFAULT_INFANT_AGE));
         }
 
         String cabinClass = request.cabinClass() == null || request.cabinClass().isBlank()
@@ -66,29 +84,22 @@ public class FlightSearchService {
     }
 
     private FlightSearchResponse mapToFlightSearchResponse(DuffelRawResponse.Offer offer, FlightSearchRequest request) {
-        BigDecimal basePrice = offer.totalAmount();
+        BigDecimal fare = offer.baseAmount() != null ? offer.baseAmount() : BigDecimal.ZERO;
+        BigDecimal taxes = offer.taxAmount() != null ? offer.taxAmount() : BigDecimal.ZERO;
+        BigDecimal offerTotal = offer.totalAmount() != null ? offer.totalAmount() : fare.add(taxes);
         String currency = offer.totalCurrency();
 
-        // Extra Baggage calculation logic
-        BigDecimal calculatedBaggageFee = BigDecimal.ZERO;
-        if (request.baggageCount() > 0 && offer.availableServices() != null) {
-            var bagService = offer.availableServices().stream()
-                    .filter(s -> "baggage".equalsIgnoreCase(s.type()))
-                    .findFirst();
+        int adults = Math.max(1, request.adults());
+        int children = request.children() == null ? 0 : Math.max(0, request.children());
+        int infants = request.infants() == null ? 0 : Math.max(0, Math.min(request.infants(), adults));
+        int payingPax = adults + children;
 
-            if (bagService.isPresent()) {
-                calculatedBaggageFee = bagService.get().totalAmount()
-                        .multiply(BigDecimal.valueOf(request.baggageCount()));
-            } else {
-                calculatedBaggageFee = BigDecimal.valueOf(request.baggageCount() * 35.0);
-            }
-        }
-
-        // Weight fee logic (e.g., $10/kg over 23kg standard limit)
-        if (request.baggageWeightKg() > 23.0) {
-            double overweightKg = request.baggageWeightKg() - 23.0;
-            calculatedBaggageFee = calculatedBaggageFee.add(BigDecimal.valueOf(overweightKg * 10.0));
-        }
+        BagFeeResult bagFees = calculateBaggageFees(
+                offer,
+                request.bags(),
+                request.cabinClass(),
+                payingPax
+        );
 
         List<FlightSliceDTO> slices = offer.slices() == null ? List.of() : offer.slices().stream()
                 .filter(slice -> slice.segments() != null && !slice.segments().isEmpty())
@@ -104,17 +115,134 @@ public class FlightSearchService {
                     );
                 }).toList();
 
-        BigDecimal safeBase = basePrice != null ? basePrice : BigDecimal.ZERO;
+        // Offer total is for all pax; Duffel does not expose per-pax amounts on search offers
+        String infantNote = infants > 0
+                ? "Infant priced by airline from age " + DEFAULT_INFANT_AGE + " (included in fare/taxes)"
+                : null;
+        if (children > 0) {
+            String childNote = "Child priced by airline from age " + DEFAULT_CHILD_AGE + " (included in fare/taxes)";
+            infantNote = infantNote == null ? childNote : childNote + ". " + infantNote;
+        }
+
+        BigDecimal total = offerTotal.add(bagFees.fee());
+        PriceBreakdown breakdown = new PriceBreakdown(
+                fare,
+                taxes,
+                bagFees.fee(),
+                total,
+                adults,
+                children,
+                infants,
+                bagFees.includedBags(),
+                bagFees.extraBags(),
+                infantNote
+        );
 
         return new FlightSearchResponse(
             offer.id(),
             offer.owner() != null ? offer.owner().name() : "Unknown Airline",
             offer.owner() != null ? offer.owner().logoSymbolUrl() : null,
-            safeBase,
-            calculatedBaggageFee,
-            safeBase.add(calculatedBaggageFee),
+            offerTotal,
+            bagFees.fee(),
+            total,
             currency,
-            slices
+            slices,
+            breakdown
         );
+    }
+
+    private record BagFeeResult(BigDecimal fee, int includedBags, int extraBags) {}
+
+    /**
+     * bags[] = total checked bags the party is taking (not "extra only").
+     * Charge piece fee only for bags beyond fare-included allowance; overweight on any bag.
+     */
+    private BagFeeResult calculateBaggageFees(
+            DuffelRawResponse.Offer offer,
+            List<Double> bags,
+            String cabinClass,
+            int payingPax
+    ) {
+        int includedBags = resolveIncludedCheckedBags(offer, cabinClass, payingPax);
+        if (bags == null || bags.isEmpty()) {
+            return new BagFeeResult(BigDecimal.ZERO, includedBags, 0);
+        }
+
+        BigDecimal unitFee = BigDecimal.valueOf(FALLBACK_BAG_FEE);
+        double includedKg = includedWeightKg(cabinClass);
+
+        if (offer.availableServices() != null) {
+            var bagService = offer.availableServices().stream()
+                    .filter(s -> "baggage".equalsIgnoreCase(s.type()))
+                    .findFirst();
+            if (bagService.isPresent()) {
+                if (bagService.get().totalAmount() != null) {
+                    unitFee = bagService.get().totalAmount();
+                }
+                Integer maxKg = bagService.get().maximumWeightKg();
+                if (maxKg == null && bagService.get().metadata() != null) {
+                    maxKg = bagService.get().metadata().maximumWeightKg();
+                }
+                if (maxKg != null && maxKg > 0) {
+                    includedKg = maxKg.doubleValue();
+                }
+            }
+        }
+
+        BigDecimal total = BigDecimal.ZERO;
+        int bagIndex = 0;
+        for (Double weight : bags) {
+            if (weight == null || weight <= 0) {
+                continue;
+            }
+            boolean extra = bagIndex >= includedBags;
+            if (extra) {
+                total = total.add(unitFee);
+            }
+            double overweight = Math.max(0, weight - includedKg);
+            if (overweight > 0) {
+                total = total.add(BigDecimal.valueOf(overweight * OVERWEIGHT_PER_KG));
+            }
+            bagIndex++;
+        }
+
+        int extraBags = Math.max(0, bagIndex - includedBags);
+        return new BagFeeResult(total, includedBags, extraBags);
+    }
+
+    /** Prefer Duffel passenger baggages; else cabin-class fallback × paying pax. */
+    private int resolveIncludedCheckedBags(DuffelRawResponse.Offer offer, String cabinClass, int payingPax) {
+        int fromOffer = 0;
+        if (offer.passengers() != null) {
+            for (var passenger : offer.passengers()) {
+                if (passenger.baggages() == null) continue;
+                for (var bag : passenger.baggages()) {
+                    if ("checked".equalsIgnoreCase(bag.type()) && bag.quantity() != null) {
+                        fromOffer += bag.quantity();
+                    }
+                }
+            }
+        }
+        if (fromOffer > 0) {
+            return fromOffer;
+        }
+        return cabinIncludedPerPax(cabinClass) * Math.max(1, payingPax);
+    }
+
+    private static int cabinIncludedPerPax(String cabinClass) {
+        if (cabinClass == null) return 0;
+        return switch (cabinClass.toLowerCase()) {
+            case "first", "business" -> 2;
+            case "premium_economy" -> 1;
+            default -> 0;
+        };
+    }
+
+    private static double includedWeightKg(String cabinClass) {
+        if (cabinClass == null) return FALLBACK_INCLUDED_KG;
+        return switch (cabinClass.toLowerCase()) {
+            case "first", "business" -> 32.0;
+            default -> FALLBACK_INCLUDED_KG;
+        };
     }
 }
