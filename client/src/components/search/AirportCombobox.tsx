@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,9 +11,10 @@ import {
 } from '@/components/ui/command'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { AIRPORTS } from '@/lib/mock-data'
+import { useAirport } from '@/hooks/useAirport'
+import { useAirportAutocomplete } from '@/hooks/useAirportAutocomplete'
 import { cn } from '@/lib/utils'
-import type { IataCode } from '@/types/skyroute.types'
+import type { Airport, IataCode } from '@/types/skyroute.types'
 
 type Props = {
   label: string
@@ -24,19 +25,27 @@ type Props = {
 
 export function AirportCombobox({ label, value, onChange, exclude }: Props) {
   const [open, setOpen] = useState(false)
-  const selected = AIRPORTS.find((a) => a.iata === value)
+  const [q, setQ] = useState('')
+  const [picked, setPicked] = useState<Airport | null>(null)
 
-  const results = useMemo(
-    () => AIRPORTS.filter((a) => a.iata !== exclude),
-    [exclude],
-  )
+  const selected = useAirport(picked?.iata === value ? undefined : value)
+  const display = picked?.iata === value ? picked : selected
+
+  const { airports, loading } = useAirportAutocomplete(q, open)
+  const results = airports.filter((a) => a.iata !== exclude)
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
       <Label className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </Label>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next)
+          if (!next) setQ('')
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
             type="button"
@@ -49,25 +58,33 @@ export function AirportCombobox({ label, value, onChange, exclude }: Props) {
               <span className="font-[family-name:var(--font-display)] text-base font-semibold">
                 {value || '—'}
               </span>
-              <span className="truncate text-muted-foreground">{selected?.city ?? 'Airport'}</span>
+              <span className="truncate text-muted-foreground">{display?.city ?? 'Airport'}</span>
             </span>
             <ChevronsUpDown className="opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-          <Command>
-            <CommandInput placeholder="City or IATA" />
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="City or IATA"
+              value={q}
+              onValueChange={setQ}
+            />
             <CommandList>
-              <CommandEmpty>No airport found.</CommandEmpty>
-              <CommandGroup>
+              <CommandEmpty>
+                {loading ? 'Loading…' : q.trim() ? 'No airport found.' : ' '}
+              </CommandEmpty>
+              <CommandGroup heading={!q.trim() && results.length > 0 ? 'Popular' : undefined}>
                 {results.map((a) => (
                   <CommandItem
                     key={a.iata}
                     value={`${a.iata} ${a.city} ${a.name}`}
                     data-checked={a.iata === value || undefined}
                     onSelect={() => {
+                      setPicked(a)
                       onChange(a.iata)
                       setOpen(false)
+                      setQ('')
                     }}
                     className={cn(a.iata === value && 'bg-muted')}
                   >
