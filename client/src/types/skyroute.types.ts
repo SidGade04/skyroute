@@ -37,6 +37,20 @@ export interface FlightSlice {
   departureTime: string
   arrivalTime: string
   duration: string
+  segments: FlightSegment[]
+}
+
+export interface FlightSegment {
+  originCode: string
+  destinationCode: string
+  /** Local time at origin airport (no offset) */
+  departureTime: string
+  /** Local time at destination airport (no offset) */
+  arrivalTime: string
+  duration: string | null
+  flightNumber: string | null
+  operatingCarrier: string | null
+  aircraft: string | null
 }
 
 export interface PriceBreakdown {

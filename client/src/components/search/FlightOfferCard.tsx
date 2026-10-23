@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { formatIsoDuration, formatTime } from '@/lib/utils'
+import { dayOffset, formatDuration, formatIsoDuration, formatTime, minutesBetween } from '@/lib/utils'
 import { useCurrency } from '@/components/common/CurrencyDropdown'
 import type { FlightSearchResponse } from '@/types/skyroute.types'
 
@@ -45,7 +45,11 @@ export function FlightOfferCard({ offer, index }: Props) {
         </div>
 
         <div className="space-y-3">
-          {slices.map((slice, i) => (
+          {slices.map((slice, i) => {
+            const segs = slice.segments ?? []
+            const stops = Math.max(segs.length - 1, 0)
+            const plusDays = dayOffset(slice.departureTime, slice.arrivalTime)
+            return (
             <div key={`${slice.originCode}-${slice.destinationCode}-${i}`}>
               {slices.length > 1 && (
                 <p className="mb-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
@@ -64,16 +68,48 @@ export function FlightOfferCard({ offer, index }: Props) {
                     {formatIsoDuration(slice.duration)}
                   </div>
                   <Separator />
+                  <div className="mt-1 text-center text-xs text-muted-foreground">
+                    {stops === 0
+                      ? 'Direct'
+                      : `${stops} stop${stops > 1 ? 's' : ''} · ${segs.slice(0, -1).map((s) => s.destinationCode).join(', ')}`}
+                  </div>
                 </div>
                 <div>
                   <div className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight">
                     {formatTime(slice.arrivalTime)}
+                    {plusDays > 0 && <sup className="ml-0.5 text-xs text-muted-foreground">+{plusDays}</sup>}
                   </div>
                   <div className="text-sm text-muted-foreground">{slice.destinationCode}</div>
                 </div>
               </div>
+              {stops > 0 && (
+                <details className="mt-2 text-xs text-muted-foreground">
+                  <summary className="cursor-pointer select-none">Flight details</summary>
+                  <ol className="mt-2 space-y-2 border-l pl-3">
+                    {segs.map((s, j) => (
+                      <li key={`${s.flightNumber ?? ''}-${j}`}>
+                        <div className="text-foreground">
+                          {formatTime(s.departureTime)} {s.originCode} → {formatTime(s.arrivalTime)} {s.destinationCode}
+                          {dayOffset(s.departureTime, s.arrivalTime) > 0 && ` (+${dayOffset(s.departureTime, s.arrivalTime)})`}
+                        </div>
+                        <div>
+                          {[s.flightNumber, s.operatingCarrier, s.aircraft, s.duration && formatIsoDuration(s.duration)]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </div>
+                        {j < segs.length - 1 && (
+                          <div className="mt-2 italic">
+                            Layover in {s.destinationCode} · {formatDuration(minutesBetween(s.arrivalTime, segs[j + 1].departureTime))}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </details>
+              )}
             </div>
-          ))}
+            )
+          })}
         </div>
 
         {b && (

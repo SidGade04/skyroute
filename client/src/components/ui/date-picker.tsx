@@ -9,6 +9,8 @@ type Props = {
   value?: string
   onChange: (isoDate: string) => void
   className?: string
+  disabled?: boolean
+  placeholder?: string
   /** Inclusive ISO lower bound (yyyy-MM-dd) */
   min?: string
   /** Inclusive ISO upper bound (yyyy-MM-dd) */
@@ -21,7 +23,7 @@ function parseIso(iso?: string) {
   return Number.isNaN(d.getTime()) ? undefined : d
 }
 
-export function DatePicker({ value, onChange, className, min, max }: Props) {
+export function DatePicker({ value, onChange, className, disabled, placeholder = 'Pick a date', min, max }: Props) {
   const date = parseIso(value)
   const minDate = parseIso(min)
   const maxDate = parseIso(max)
@@ -32,6 +34,7 @@ export function DatePicker({ value, onChange, className, min, max }: Props) {
         <Button
           type="button"
           variant="outline"
+          disabled={disabled}
           data-empty={!date}
           className={cn(
             'h-9 w-full justify-start text-left font-normal data-[empty=true]:text-muted-foreground',
@@ -39,7 +42,7 @@ export function DatePicker({ value, onChange, className, min, max }: Props) {
           )}
         >
           <CalendarIcon data-icon="inline-start" />
-          {date ? format(date, 'MMM d, yyyy') : <span>Pick a date</span>}
+          {date ? format(date, 'MMM d, yyyy') : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

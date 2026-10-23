@@ -21,11 +21,20 @@ export function formatDuration(minutes: number) {
 
 export function formatIsoDuration(iso: string | null | undefined) {
   if (!iso) return '—'
-  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/)
+  const m = iso.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?$/)
   if (!m) return iso
-  const h = m[1] ? `${m[1]}h` : ''
-  const min = m[2] ? ` ${m[2]}m` : ''
-  return `${h}${min}`.trim() || iso
+  const mins = (Number(m[1] ?? 0) * 24 + Number(m[2] ?? 0)) * 60 + Number(m[3] ?? 0)
+  return mins ? formatDuration(mins) : iso
+}
+
+/** Minutes between two naive local timestamps at the same airport (layover). */
+export function minutesBetween(fromIso: string, toIso: string) {
+  return Math.round((new Date(toIso).getTime() - new Date(fromIso).getTime()) / 60000)
+}
+
+/** Calendar-day offset between two naive local timestamps, e.g. +1 for next-day arrival. */
+export function dayOffset(fromIso: string, toIso: string) {
+  return Math.round((Date.parse(toIso.slice(0, 10)) - Date.parse(fromIso.slice(0, 10))) / 86400000)
 }
 
 export function formatTime(iso: string) {
