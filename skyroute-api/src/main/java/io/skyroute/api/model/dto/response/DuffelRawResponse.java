@@ -54,6 +54,8 @@ public record DuffelRawResponse(
             AirportLocation origin,
             AirportLocation destination,
             @JsonProperty("operating_carrier") OperatingCarrier operatingCarrier,
+            @JsonProperty("marketing_carrier") OperatingCarrier marketingCarrier,
+            @JsonProperty("marketing_carrier_flight_number") String marketingCarrierFlightNumber,
             Aircraft aircraft,
             String duration) {
     }

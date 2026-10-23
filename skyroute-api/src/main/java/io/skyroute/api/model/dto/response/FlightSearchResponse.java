@@ -19,7 +19,19 @@ public record FlightSearchResponse(
         String destinationCode,
         String departureTime,
         String arrivalTime,
-        String duration
+        String duration,
+        List<SegmentDTO> segments
+    ) {}
+
+    public record SegmentDTO(
+        String originCode,
+        String destinationCode,
+        String departureTime,
+        String arrivalTime,
+        String duration,
+        String flightNumber,
+        String operatingCarrier,
+        String aircraft
     ) {}
 
     public record PriceBreakdown(

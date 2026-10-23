@@ -6,6 +6,7 @@ import io.skyroute.api.model.dto.response.DuffelRawResponse;
 import io.skyroute.api.model.dto.response.FlightSearchResponse;
 import io.skyroute.api.model.dto.response.FlightSearchResponse.FlightSliceDTO;
 import io.skyroute.api.model.dto.response.FlightSearchResponse.PriceBreakdown;
+import io.skyroute.api.model.dto.response.FlightSearchResponse.SegmentDTO;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -101,6 +102,7 @@ public class FlightSearchService {
                 payingPax
         );
 
+        boolean roundTrip = request.returnDate() != null && !request.returnDate().isBlank();
         List<FlightSliceDTO> slices = offer.slices() == null ? List.of() : offer.slices().stream()
                 .filter(slice -> slice.segments() != null && !slice.segments().isEmpty())
                 .map(slice -> {
@@ -111,9 +113,23 @@ public class FlightSearchService {
                         slice.destination() != null ? slice.destination().iataCode() : null,
                         firstSegment.departingAt(),
                         lastSegment.arrivingAt(),
-                        slice.duration()
+                        slice.duration(),
+                        slice.segments().stream().map(s -> new SegmentDTO(
+                            s.origin() != null ? s.origin().iataCode() : null,
+                            s.destination() != null ? s.destination().iataCode() : null,
+                            s.departingAt(),
+                            s.arrivingAt(),
+                            s.duration(),
+                            s.marketingCarrier() != null && s.marketingCarrierFlightNumber() != null
+                                ? s.marketingCarrier().iataCode() + s.marketingCarrierFlightNumber()
+                                : null,
+                            s.operatingCarrier() != null ? s.operatingCarrier().name() : null,
+                            s.aircraft() != null ? s.aircraft().name() : null
+                        )).toList()
                     );
-                }).toList();
+                })
+                .limit(roundTrip ? Long.MAX_VALUE : 1)
+                .toList();
 
         // Offer total is for all pax; Duffel does not expose per-pax amounts on search offers
         String infantNote = infants > 0
