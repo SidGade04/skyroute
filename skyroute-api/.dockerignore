@@ -1,0 +1,8 @@
+target/
+build/
+.git/
+.gitignore
+.idea/
+*.iml
+.vscode/
+HELP.md
