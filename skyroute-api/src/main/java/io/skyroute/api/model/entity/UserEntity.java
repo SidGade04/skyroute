@@ -49,6 +49,12 @@ public class UserEntity {
         this.updatedAt = now;
     }
 
+    public void updateDetails(String email, String phone) {
+        this.email = email;
+        this.phone = phone;
+        this.updatedAt = Instant.now();
+    }
+
     public void apply(String email, String firstName, String lastName, String phone, String avatarUrl, String provider) {
         this.email = email;
         this.firstName = firstName;
