@@ -1,0 +1,42 @@
+package io.skyroute.api.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/v1/users/**").authenticated()
+                        .anyRequest().permitAll())
+                .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
+        return http.build();
+    }
+
+    @Bean
+    JwtDecoder jwtDecoder(@Value("${supabase.url:https://upflsctfohapklyevbco.supabase.co}") String supabaseUrl) {
+        String issuer = supabaseUrl.replaceAll("/+$", "") + "/auth/v1";
+        // ponytail: withJwkSetUri defaults to RS256; Supabase access tokens are ES256, so every Bearer call 401s
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(issuer + "/.well-known/jwks.json")
+                .jwsAlgorithm(SignatureAlgorithm.ES256)
+                .build();
+        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(issuer));
+        return decoder;
+    }
+}
