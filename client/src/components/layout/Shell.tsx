@@ -75,8 +75,10 @@ export function Shell() {
             <div className="ml-1 flex items-center gap-1.5 border-l border-[var(--line)] pl-2 md:ml-2 md:pl-3">
               {account ? (
                 <>
-                  <span
+                  <Link
+                    to="/profile"
                     title={account.email}
+                    aria-label="Profile"
                     className="grid size-8 place-items-center overflow-hidden rounded-full bg-[var(--wash)] text-[var(--ink)]"
                   >
                     {account.avatarUrl ? (
@@ -89,7 +91,7 @@ export function Shell() {
                     ) : (
                       <CircleUser className="size-5" aria-hidden />
                     )}
-                  </span>
+                  </Link>
                   <Button
                     variant="ghost"
                     size="sm"

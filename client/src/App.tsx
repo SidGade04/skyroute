@@ -3,6 +3,7 @@ import { Shell } from './components/layout/Shell'
 import { AlertsPage } from './pages/AlertsPage'
 import { AuthCallback } from './pages/AuthCallback'
 import { AuthPage } from './pages/AuthPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { RendezvousPage } from './pages/RendezvousPage'
 import { SearchPage } from './pages/SearchPage'
 import { SearchResultsPage } from './pages/SearchResultsPage'
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="login" element={<AuthPage mode="login" />} />
           <Route path="signup" element={<AuthPage mode="signup" />} />
           <Route path="auth/callback" element={<AuthCallback />} />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
