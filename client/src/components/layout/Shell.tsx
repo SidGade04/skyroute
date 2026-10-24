@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
+import type { User } from '@supabase/supabase-js'
+import { CircleUser } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/api/supabaseClient'
 import { CurrencyDropdown, CurrencyProvider } from '@/components/common/CurrencyDropdown'
@@ -11,16 +13,33 @@ const links = [
   { to: '/alerts', label: 'Sniper' },
 ]
 
+function accountFrom(user: User | null) {
+  if (!user?.email) return null
+  const meta = user.user_metadata as { avatar_url?: string; picture?: string }
+  return { email: user.email, avatarUrl: meta.avatar_url || meta.picture || null }
+}
+
 export function Shell() {
-  const [email, setEmail] = useState<string | null>(null)
+  const [account, setAccount] = useState<{ email: string; avatarUrl: string | null } | null>(null)
+  const [goodbye, setGoodbye] = useState<null | 'in' | 'out'>(null)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setEmail(data.session?.user.email ?? null))
+    supabase.auth.getSession().then(({ data }) => setAccount(accountFrom(data.session?.user ?? null)))
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setEmail(session?.user.email ?? null)
+      setAccount(accountFrom(session?.user ?? null))
     })
     return () => data.subscription.unsubscribe()
   }, [])
+
+  function logout() {
+    if (goodbye) return
+    setGoodbye('in')
+    window.setTimeout(async () => {
+      await supabase.auth.signOut()
+      setGoodbye('out')
+      window.setTimeout(() => setGoodbye(null), 320)
+    }, 680)
+  }
 
   return (
     <CurrencyProvider>
@@ -54,16 +73,29 @@ export function Shell() {
               ))}
             </nav>
             <div className="ml-1 flex items-center gap-1.5 border-l border-[var(--line)] pl-2 md:ml-2 md:pl-3">
-              {email ? (
+              {account ? (
                 <>
-                  <span className="hidden max-w-40 truncate text-sm text-[var(--ink-muted)] sm:inline">
-                    {email}
+                  <span
+                    title={account.email}
+                    className="grid size-8 place-items-center overflow-hidden rounded-full bg-[var(--wash)] text-[var(--ink)]"
+                  >
+                    {account.avatarUrl ? (
+                      <img
+                        src={account.avatarUrl}
+                        alt=""
+                        referrerPolicy="no-referrer"
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <CircleUser className="size-5" aria-hidden />
+                    )}
                   </span>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="px-2.5"
-                    onClick={() => supabase.auth.signOut()}
+                    disabled={goodbye !== null}
+                    onClick={logout}
                   >
                     Log out
                   </Button>
@@ -86,6 +118,19 @@ export function Shell() {
       <main className="flex-1">
         <Outlet />
       </main>
+
+      {goodbye && (
+        <div
+          className={cn(
+            'fixed inset-0 z-[80] flex items-center justify-center bg-[var(--paper)]/80 backdrop-blur-sm transition-opacity duration-300',
+            goodbye === 'out' ? 'opacity-0' : 'opacity-100',
+          )}
+        >
+          <p className="hero-rise font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-[var(--ink)]">
+            Signed out
+          </p>
+        </div>
+      )}
 
       <footer className="border-t border-[var(--line)] bg-[var(--ink)] text-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-10 md:flex-row md:items-start md:justify-between md:px-8 md:py-12">
