@@ -1,6 +1,9 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/api/supabaseClient'
 import { CurrencyDropdown, CurrencyProvider } from '@/components/common/CurrencyDropdown'
+import { Button } from '@/components/ui/button'
 
 const links = [
   { to: '/', label: 'Search', end: true },
@@ -9,36 +12,74 @@ const links = [
 ]
 
 export function Shell() {
+  const [email, setEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setEmail(data.session?.user.email ?? null))
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setEmail(session?.user.email ?? null)
+    })
+    return () => data.subscription.unsubscribe()
+  }, [])
+
   return (
     <CurrencyProvider>
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--surface)]/95 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 md:h-[4.25rem] md:px-8">
+        <div className="mx-auto flex h-16 max-w-8xl items-center justify-between px-5 md:h-[4.25rem] md:px-8">
           <NavLink
             to="/"
             className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-[var(--ink)] md:text-[1.75rem]"
           >
             SkyRoute
           </NavLink>
-          <nav className="flex items-center gap-0.5 md:gap-1">
-            {links.map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                end={l.end}
-                className={({ isActive }) =>
-                  cn(
-                    'rounded-md px-3 py-2 text-sm font-medium transition-colors md:px-3.5',
-                    isActive
-                      ? 'bg-[var(--ink)] text-white'
-                      : 'text-[var(--ink-muted)] hover:bg-[var(--wash)] hover:text-[var(--ink)]',
-                  )
-                }
-              >
-                {l.label}
-              </NavLink>
-            ))}
-          </nav>
+          <div className="flex items-center gap-1 md:gap-2">
+            <nav className="flex items-center gap-0.5 md:gap-1">
+              {links.map((l) => (
+                <NavLink
+                  key={l.to}
+                  to={l.to}
+                  end={l.end}
+                  className={({ isActive }) =>
+                    cn(
+                      'rounded-md px-2.5 py-2 text-sm font-medium transition-colors md:px-3.5',
+                      isActive
+                        ? 'bg-[var(--ink)] text-white'
+                        : 'text-[var(--ink-muted)] hover:bg-[var(--wash)] hover:text-[var(--ink)]',
+                    )
+                  }
+                >
+                  {l.label}
+                </NavLink>
+              ))}
+            </nav>
+            <div className="ml-1 flex items-center gap-1.5 border-l border-[var(--line)] pl-2 md:ml-2 md:pl-3">
+              {email ? (
+                <>
+                  <span className="hidden max-w-40 truncate text-sm text-[var(--ink-muted)] sm:inline">
+                    {email}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="px-2.5"
+                    onClick={() => supabase.auth.signOut()}
+                  >
+                    Log out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" className="px-2.5" asChild>
+                    <Link to="/login">Log in</Link>
+                  </Button>
+                  <Button size="sm" className="px-2.5" asChild>
+                    <Link to="/signup">Sign up</Link>
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
