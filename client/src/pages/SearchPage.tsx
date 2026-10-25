@@ -43,7 +43,7 @@ export function SearchPage() {
   return (
     <section className="relative min-h-[calc(100dvh-4.25rem)] overflow-hidden">
       <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover hero-pan" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,22,40,0.35)_0%,rgba(8,22,40,0.55)_45%,rgba(243,246,249,0.92)_78%,var(--background)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,22,40,0.35)_0%,rgba(8,22,40,0.55)_45%,rgba(243,246,249,0.92)_78%,var(--background)_100%)] dark:bg-[linear-gradient(180deg,rgba(0,0,0,0.2)_0%,rgba(0,0,0,0.55)_55%,var(--background)_100%)]" />
 
       <div className="relative mx-auto flex min-h-[calc(100dvh-4.25rem)] max-w-6xl flex-col justify-end px-5 pb-16 pt-24 md:px-8">
         <div className="hero-rise mb-8 max-w-xl">

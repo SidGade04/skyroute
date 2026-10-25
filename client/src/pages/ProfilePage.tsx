@@ -179,7 +179,7 @@ export function ProfilePage() {
       <form onSubmit={save} className="hero-rise mt-6 overflow-hidden rounded-xl border bg-card" style={{ animationDelay: '80ms' }}>
           <div className="grid gap-5 px-6 py-5">
             <div className="grid gap-1.5">
-              <Label htmlFor="email" className="text-sm font-medium text-zinc-700">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email
               </Label>
               <Input
@@ -188,17 +188,17 @@ export function ProfilePage() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-9 border-zinc-200 bg-white shadow-none focus-visible:border-zinc-400 focus-visible:ring-zinc-200"
+                className="h-9 border-input bg-transparent shadow-none"
                 disabled={state !== 'ready' || google}
                 required
               />
-              {google && <p className="text-xs text-zinc-500">Managed by Google</p>}
+              {google && <p className="text-xs text-muted-foreground">Managed by Google</p>}
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="phone" className="text-sm font-medium text-zinc-700">
+              <Label htmlFor="phone" className="text-sm font-medium text-foreground">
                 Phone
               </Label>
-              <div className="flex h-9 overflow-hidden rounded-lg border border-zinc-200 bg-white focus-within:border-zinc-400 focus-within:ring-3 focus-within:ring-zinc-200">
+              <div className="flex h-9 overflow-hidden rounded-lg border border-input bg-transparent focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
                 <Select value={country} onValueChange={setCountry} disabled={state !== 'ready'}>
                   <SelectTrigger
                     aria-label="Country code"
@@ -214,7 +214,7 @@ export function ProfilePage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="w-px self-stretch bg-zinc-200" />
+                <div className="w-px self-stretch bg-border" />
                 <Input
                   id="phone"
                   type="tel"
@@ -230,7 +230,7 @@ export function ProfilePage() {
               </div>
             </div>
           </div>
-          <div className="flex flex-col gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t bg-muted/40 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className={saveError ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'} role="status">
               {saveError ?? note ?? ''}
             </p>

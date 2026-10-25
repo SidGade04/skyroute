@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import type { User } from '@supabase/supabase-js'
-import { CircleUser } from 'lucide-react'
+import { CircleUser, Moon, Sun } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/api/supabaseClient'
 import { CurrencyDropdown, CurrencyProvider } from '@/components/common/CurrencyDropdown'
@@ -12,6 +12,29 @@ const links = [
   { to: '/rendezvous', label: 'Rendezvous' },
   { to: '/alerts', label: 'Sniper' },
 ]
+
+function ThemeToggle() {
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
+
+  function toggle() {
+    const next = !document.documentElement.classList.contains('dark')
+    document.documentElement.classList.toggle('dark', next)
+    localStorage.setItem('theme', next ? 'dark' : 'light')
+    setDark(next)
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-pressed={dark}
+      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+      onClick={toggle}
+    >
+      {dark ? <Sun /> : <Moon />}
+    </Button>
+  )
+}
 
 function accountFrom(user: User | null) {
   if (!user?.email) return null
@@ -63,7 +86,7 @@ export function Shell() {
                     cn(
                       'rounded-md px-2.5 py-2 text-sm font-medium transition-colors md:px-3.5',
                       isActive
-                        ? 'bg-[var(--ink)] text-white'
+                        ? 'bg-[var(--ink)] text-[var(--paper)]'
                         : 'text-[var(--ink-muted)] hover:bg-[var(--wash)] hover:text-[var(--ink)]',
                     )
                   }
@@ -72,6 +95,7 @@ export function Shell() {
                 </NavLink>
               ))}
             </nav>
+            <ThemeToggle />
             <div className="ml-1 flex items-center gap-1.5 border-l border-[var(--line)] pl-2 md:ml-2 md:pl-3">
               {account ? (
                 <>
@@ -117,7 +141,7 @@ export function Shell() {
         </div>
       </header>
 
-      <main className="flex-1">
+      <main className="min-h-[calc(100dvh-4.25rem)] flex-1">
         <Outlet />
       </main>
 
@@ -134,13 +158,13 @@ export function Shell() {
         </div>
       )}
 
-      <footer className="border-t border-[var(--line)] bg-[var(--ink)] text-white">
+      <footer className="border-t border-[var(--line)] bg-[var(--ink)] text-[var(--paper)] dark:bg-[var(--surface)] dark:text-[var(--ink)]">
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-10 md:flex-row md:items-start md:justify-between md:px-8 md:py-12">
           <div className="max-w-xs">
             <p className="font-[family-name:var(--font-display)] text-xl font-bold tracking-tight">
               SkyRoute
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-white/65">
+            <p className="mt-2 text-sm leading-relaxed text-current/65">
               Fare intelligence that prices the bags you actually fly with.
             </p>
           </div>
@@ -150,7 +174,7 @@ export function Shell() {
                 key={l.to}
                 to={l.to}
                 end={l.end}
-                className="text-white/70 transition-colors hover:text-white"
+                className="text-current/70 transition-colors hover:text-current"
               >
                 {l.label}
               </NavLink>
@@ -158,8 +182,8 @@ export function Shell() {
           </nav>
           
         </div>
-        <div className="border-t border-white/10">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 text-xs text-white/45 md:px-8">
+        <div className="border-t border-current/10">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 text-xs text-current/45 md:px-8">
             <span>© {new Date().getFullYear()} SkyRoute</span>
             <span>Bags priced in. Surprises priced out.</span>
             <CurrencyDropdown />
