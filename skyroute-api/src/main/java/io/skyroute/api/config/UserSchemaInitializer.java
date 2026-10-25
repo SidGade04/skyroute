@@ -37,6 +37,11 @@ public class UserSchemaInitializer implements ApplicationRunner {
             }
             statement.execute("ALTER TABLE skyroute.users ALTER COLUMN created_at SET DEFAULT now()");
             statement.execute("ALTER TABLE skyroute.users ALTER COLUMN updated_at SET DEFAULT now()");
+            statement.execute("""
+                    CREATE UNIQUE INDEX IF NOT EXISTS users_phone_key
+                    ON skyroute.users (replace(phone, ' ', ''))
+                    WHERE phone IS NOT NULL AND btrim(phone) <> ''
+                    """);
         } catch (Exception e) {
             SQLException sql = e instanceof SQLException s ? s : null;
             log.warn("users table not ready: {}", sql != null ? sql.getMessage() : e.getMessage());

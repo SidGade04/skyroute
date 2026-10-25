@@ -5,6 +5,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 import io.skyroute.api.exception.ResourceNotFoundException;
 import io.skyroute.api.model.dto.UserDTO;
 import io.skyroute.api.model.dto.request.UpdateUserRequest;
@@ -27,14 +29,25 @@ public class UserService {
                 .orElseGet(() -> new UserEntity(SupabaseClaims.id(jwt)));
         String provider = user.getProvider() != null ? user.getProvider() : SupabaseClaims.provider(jwt);
         String email = !google(provider) && user.getEmail() != null ? user.getEmail() : SupabaseClaims.email(jwt);
+        String phone = user.getPhone() != null ? user.getPhone() : SupabaseClaims.phone(jwt);
+        rejectTakenPhone(user.getId(), phone);
         user.apply(
                 email,
                 user.getFirstName() != null ? user.getFirstName() : SupabaseClaims.firstName(jwt),
                 user.getLastName() != null ? user.getLastName() : SupabaseClaims.lastName(jwt),
-                user.getPhone() != null ? user.getPhone() : SupabaseClaims.phone(jwt),
+                phone,
                 SupabaseClaims.avatarUrl(jwt),
                 provider);
-        return UserDTO.from(userRepository.save(user));
+        try {
+            return UserDTO.from(userRepository.saveAndFlush(user));
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException(conflict(e));
+        }
+    }
+
+    public boolean phoneTaken(String raw) {
+        String key = UpdateUserRequest.phoneKey(raw);
+        return key != null && userRepository.phoneTaken(key);
     }
 
     @Transactional
@@ -49,12 +62,27 @@ public class UserService {
             }
             if (!google(user.getProvider())) email = next;
         }
-        user.updateDetails(email, request.normalizedPhone());
+        String phone = request.normalizedPhone();
+        rejectTakenPhone(user.getId(), phone);
+        user.updateDetails(email, phone);
         try {
             return UserDTO.from(userRepository.saveAndFlush(user));
         } catch (DataIntegrityViolationException e) {
-            throw new IllegalArgumentException("Email is already in use");
+            throw new IllegalArgumentException(conflict(e));
         }
+    }
+
+    private void rejectTakenPhone(UUID id, String phone) {
+        String key = UpdateUserRequest.phoneKey(phone);
+        if (key != null && userRepository.phoneTakenByOther(key, id)) {
+            throw new IllegalArgumentException("Phone number is already in use");
+        }
+    }
+
+    private static String conflict(DataIntegrityViolationException e) {
+        String message = e.getMostSpecificCause().getMessage();
+        if (message != null && message.contains("phone")) return "Phone number is already in use";
+        return "Email is already in use";
     }
 
     private static boolean google(String provider) {

@@ -11,6 +11,8 @@ class UpdateUserRequestTest {
     @Test
     void normalizesPhoneAndClearsBlank() {
         assertEquals("+971 50 123 4567", UpdateUserRequest.phone(" +971 50 123 4567 "));
+        assertEquals("+971501234567", UpdateUserRequest.phoneKey(" +971 50 123 4567 "));
+        assertEquals("+971501234567", UpdateUserRequest.phoneKey("+971501234567"));
         assertNull(UpdateUserRequest.phone("  "));
         assertThrows(IllegalArgumentException.class, () -> UpdateUserRequest.phone("call me"));
         assertEquals("a@b.com", UpdateUserRequest.email(" A@b.com "));

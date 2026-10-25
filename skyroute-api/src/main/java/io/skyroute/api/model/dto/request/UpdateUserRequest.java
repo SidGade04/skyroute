@@ -29,4 +29,10 @@ public record UpdateUserRequest(String email, String phone) {
         }
         return trimmed;
     }
+
+    public static String phoneKey(String value) {
+        if (value == null) return null;
+        String stripped = value.replace(" ", "").trim();
+        return stripped.isEmpty() ? null : stripped;
+    }
 }
