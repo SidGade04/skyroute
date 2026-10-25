@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Headshot · {{origin}} to {{destination}}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f3f6f9;">
+    <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">
+      {{origin}} to {{destination}} dropped to {{hitPrice}}. Armed until {{windowEnd}}.
+    </div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f6f9;margin:0;padding:0;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+            <tr>
+              <td style="padding:0 4px 18px;">
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding-right:10px;vertical-align:middle;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="28" height="28">
+                        <tr>
+                          <td width="12" height="12" style="border-right:1.5px solid #0f7a8a;border-bottom:1.5px solid #0f7a8a;font-size:0;line-height:0;">&nbsp;</td>
+                          <td width="12" height="12" style="border-bottom:1.5px solid #0f7a8a;font-size:0;line-height:0;">&nbsp;</td>
+                        </tr>
+                        <tr>
+                          <td width="12" height="12" style="border-right:1.5px solid #0f7a8a;font-size:0;line-height:0;">&nbsp;</td>
+                          <td width="12" height="12" style="font-size:0;line-height:0;">&nbsp;</td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td style="vertical-align:middle;font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:0.22em;color:#0c1c30;font-weight:bold;">
+                      SKYROUTE
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff;border:1px solid #d5dee8;padding:32px 28px 28px;">
+                <p style="margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#0f7a8a;font-weight:bold;">
+                  Headshot
+                </p>
+                <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.05;font-weight:normal;color:#0c1c30;">
+                  {{origin}} <span style="color:#8a97a6;">&rarr;</span> {{destination}}
+                </h1>
+                <p style="margin:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#5a6b7d;">
+                  {{firstName}}, the fare fell inside the window you armed.
+                </p>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;background:#f3f6f9;">
+                  <tr>
+                    <td style="padding:22px 20px;">
+                      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8a97a6;">
+                        Armed at
+                      </p>
+                      <p style="margin:4px 0 0;font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#8a97a6;text-decoration:line-through;">
+                        {{armedPrice}}
+                      </p>
+                      <p style="margin:18px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#0f7a8a;">
+                        Now
+                      </p>
+                      <p style="margin:2px 0 0;font-family:Georgia,'Times New Roman',serif;font-size:42px;line-height:1;color:#0c1c30;">
+                        {{hitPrice}}
+                      </p>
+                      <p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#0f7a8a;font-weight:bold;">
+                        {{saved}} lower &middot; {{dropPct}}%
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;">
+                  <tr>
+                    <td style="padding:8px 0;border-top:1px solid #d5dee8;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#5a6b7d;">
+                      Window
+                    </td>
+                    <td align="right" style="padding:8px 0;border-top:1px solid #d5dee8;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0c1c30;">
+                      {{windowStart}} &ndash; {{windowEnd}}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0;border-top:1px solid #d5dee8;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#5a6b7d;">
+                      Cheapest departure
+                    </td>
+                    <td align="right" style="padding:8px 0;border-top:1px solid #d5dee8;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0c1c30;">
+                      {{cheapestDate}}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0;border-top:1px solid #d5dee8;border-bottom:1px solid #d5dee8;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#5a6b7d;">
+                      Trigger
+                    </td>
+                    <td align="right" style="padding:8px 0;border-top:1px solid #d5dee8;border-bottom:1px solid #d5dee8;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0c1c30;">
+                      {{trigger}}
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:28px;">
+                  <tr>
+                    <td style="background:#0c1c30;">
+                      <a href="{{searchUrl}}" style="display:inline-block;padding:14px 22px;font-family:Arial,Helvetica,sans-serif;font-size:14px;letter-spacing:0.08em;text-transform:uppercase;color:#ffffff;text-decoration:none;font-weight:bold;">
+                        View this fare
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#8a97a6;">
+                  Fares move. This price was live when the sniper fired. Search again before you book.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#8a97a6;">
+                Sent to {{email}} because this SkyRoute account armed a sniper on {{origin}} &rarr; {{destination}}.
+                The arm expired at the end of {{windowEnd}}, so nothing after that date can send this mail.
+                <a href="{{alertsUrl}}" style="color:#5a6b7d;">Disarm on SkyRoute</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

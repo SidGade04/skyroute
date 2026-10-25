@@ -24,6 +24,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/v1/snipers/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/flights/rendezvous").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/phone-taken").permitAll()
                         .requestMatchers("/api/v1/users/**").authenticated()

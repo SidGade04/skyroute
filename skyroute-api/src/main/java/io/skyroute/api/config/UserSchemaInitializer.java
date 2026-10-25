@@ -1,6 +1,7 @@
 package io.skyroute.api.config;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -30,9 +31,17 @@ public class UserSchemaInitializer implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         try (Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {
-            for (String script : new String[] { "db/users.sql", "db/handle_new_user.sql" }) {
+            for (String script : new String[] { "db/users.sql", "db/handle_new_user.sql", "db/snipers.sql" }) {
                 try (InputStream in = new ClassPathResource(script).getInputStream()) {
-                    statement.execute(new String(in.readAllBytes()));
+                    String sql = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+                    if ("db/snipers.sql".equals(script)) {
+                        for (String part : sql.split(";")) {
+                            String trimmed = part.trim();
+                            if (!trimmed.isEmpty()) statement.execute(trimmed);
+                        }
+                    } else {
+                        statement.execute(sql);
+                    }
                 }
             }
             statement.execute("ALTER TABLE skyroute.users ALTER COLUMN created_at SET DEFAULT now()");
@@ -44,7 +53,7 @@ public class UserSchemaInitializer implements ApplicationRunner {
                     """);
         } catch (Exception e) {
             SQLException sql = e instanceof SQLException s ? s : null;
-            log.warn("users table not ready: {}", sql != null ? sql.getMessage() : e.getMessage());
+            log.warn("schema not ready: {}", sql != null ? sql.getMessage() : e.getMessage());
         }
     }
 }

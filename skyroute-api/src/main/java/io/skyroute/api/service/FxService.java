@@ -1,6 +1,7 @@
 package io.skyroute.api.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,5 +34,25 @@ public class FxService {
         }
         // HashMap — immutable maps don't round-trip through the Redis serializer
         return new FxRatesDTO(raw.base(), raw.date(), new HashMap<>(raw.rates()));
+    }
+
+    public BigDecimal convert(BigDecimal amount, String from, String to) {
+        if (from.equalsIgnoreCase(to)) return amount.setScale(2, RoundingMode.HALF_UP);
+        FxRatesDTO fx = getLatest();
+        return amount.multiply(rate(fx, to)).divide(rate(fx, from), 2, RoundingMode.HALF_UP);
+    }
+
+    public void requireCurrency(String code) {
+        FxRatesDTO fx = getLatest();
+        rate(fx, code);
+    }
+
+    private static BigDecimal rate(FxRatesDTO fx, String code) {
+        if (code.equalsIgnoreCase(fx.base())) return BigDecimal.ONE;
+        BigDecimal rate = fx.rates().get(code.toUpperCase());
+        if (rate == null || rate.signum() == 0) {
+            throw new IllegalArgumentException("Unknown currency " + code);
+        }
+        return rate;
     }
 }

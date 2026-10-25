@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Sniper disarmed · {{origin}} to {{destination}}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f3f6f9;">
+    <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">
+      {{origin}} to {{destination}} is disarmed. No further fare emails for this sniper.
+    </div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f6f9;margin:0;padding:0;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+            <tr>
+              <td style="padding:0 4px 18px;font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:0.22em;color:#0c1c30;font-weight:bold;">
+                SKYROUTE
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff;border:1px solid #d5dee8;padding:32px 28px 28px;">
+                <p style="margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#9a5b12;font-weight:bold;">
+                  Disarmed
+                </p>
+                <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.05;font-weight:normal;color:#0c1c30;">
+                  {{origin}} <span style="color:#8a97a6;">&rarr;</span> {{destination}}
+                </h1>
+                <p style="margin:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#5a6b7d;">
+                  {{firstName}}, this sniper is off. A fare drop on this route will not email you.
+                </p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;">
+                  <tr>
+                    <td style="padding:8px 0;border-top:1px solid #d5dee8;border-bottom:1px solid #d5dee8;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#5a6b7d;">
+                      Window
+                    </td>
+                    <td align="right" style="padding:8px 0;border-top:1px solid #d5dee8;border-bottom:1px solid #d5dee8;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0c1c30;">
+                      {{windowStart}} &ndash; {{windowEnd}}
+                    </td>
+                  </tr>
+                </table>
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:28px;">
+                  <tr>
+                    <td style="background:#0c1c30;">
+                      <a href="{{alertsUrl}}" style="display:inline-block;padding:14px 22px;font-family:Arial,Helvetica,sans-serif;font-size:14px;letter-spacing:0.08em;text-transform:uppercase;color:#ffffff;text-decoration:none;font-weight:bold;">
+                        Arm again
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#8a97a6;">
+                Sent to {{email}} because this SkyRoute account disarmed the sniper on {{origin}} &rarr; {{destination}}.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
