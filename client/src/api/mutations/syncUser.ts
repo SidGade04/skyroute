@@ -20,6 +20,15 @@ function failure(e: unknown) {
   return e instanceof Error ? e : new Error('Request failed')
 }
 
+export async function phoneTaken(phone: string): Promise<boolean> {
+  try {
+    const { data } = await api.get<{ taken: boolean }>('/api/v1/users/phone-taken', { params: { phone } })
+    return data.taken
+  } catch (e) {
+    throw failure(e)
+  }
+}
+
 export async function syncUser(): Promise<UserProfile> {
   try {
     const { data } = await api.post<UserProfile>('/api/v1/users/sync')

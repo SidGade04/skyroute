@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -7,11 +7,71 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { GoogleIcon } from '@/assets/icons/GoogleIcon';
 import { DIAL_CODES } from '@/types/dialCodes.types';
 import { supabase } from '@/api/supabaseClient';
+import { phoneTaken, syncUser } from '@/api/mutations/syncUser';
 
 export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   const signup = mode === 'signup'
+  const navigate = useNavigate()
   const [country, setCountry] = useState('AE')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const dial = DIAL_CODES.find(([iso]) => iso === country)?.[2] ?? '+971'
+
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const form = e.currentTarget
+    setError(null)
+    setNotice(null)
+    if (signup) {
+      const password = (form.elements.namedItem('password') as HTMLInputElement).value
+      const confirm = form.elements.namedItem('confirm') as HTMLInputElement
+      confirm.setCustomValidity(confirm.value === password ? '' : 'Passwords do not match')
+    }
+    if (!form.reportValidity()) return
+
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value.trim()
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value
+    setBusy(true)
+    try {
+      if (signup) {
+        const firstName = (form.elements.namedItem('firstName') as HTMLInputElement).value.trim()
+        const lastName = (form.elements.namedItem('lastName') as HTMLInputElement).value.trim()
+        const national = (form.elements.namedItem('phone') as HTMLInputElement).value.trim()
+        const phone = `${dial} ${national}`
+        if (await phoneTaken(phone)) throw new Error('An account with this phone number already exists')
+        const { data, error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            data: {
+              given_name: firstName,
+              family_name: lastName,
+              phone,
+            },
+          },
+        })
+        if (authError) throw new Error(authError.message)
+        if (data.user && (data.user.identities?.length ?? 0) === 0) {
+          throw new Error('An account with this email already exists')
+        }
+        if (!data.session) {
+          setNotice('Check your email to confirm, then log in.')
+          return
+        }
+      } else {
+        const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+        if (authError) throw new Error(authError.message)
+      }
+      await syncUser()
+      navigate('/', { replace: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not sign in')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -35,18 +95,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
         Search is open. Rendezvous and Sniper need an account.
       </p>
 
-      <form
-        className="mt-8 grid gap-4 rounded-xl border bg-card p-5"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (!signup) return
-          const form = e.currentTarget
-          const password = (form.elements.namedItem('password') as HTMLInputElement).value
-          const confirm = form.elements.namedItem('confirm') as HTMLInputElement
-          confirm.setCustomValidity(confirm.value === password ? '' : 'Passwords do not match')
-          form.reportValidity()
-        }}
-      >
+      <form className="mt-8 grid gap-4 rounded-xl border bg-card p-5" onSubmit={submit}>
         {signup && (
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
@@ -119,8 +168,13 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
             />
           </div>
         )}
-        <Button type="submit" className="mt-1 h-9">
-          {signup ? 'Sign up' : 'Log in'}
+        {(error || notice) && (
+          <p className={error ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'} role="status">
+            {error ?? notice}
+          </p>
+        )}
+        <Button type="submit" className="mt-1 h-9" disabled={busy}>
+          {busy ? 'Please wait…' : signup ? 'Sign up' : 'Log in'}
         </Button>
       </form>
 
@@ -142,7 +196,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
         )}
       </p>
       <p className="mt-4 text-center text-sm text-muted-foreground">OR</p>
-      <Button variant="outline" className="mt-4 w-full" onClick={handleGoogleLogin}>
+      <Button variant="outline" className="mt-4 w-full" disabled={busy} onClick={handleGoogleLogin}>
         <GoogleIcon className="mr-2 h-4 w-4" />
         Continue with Google
       </Button>
