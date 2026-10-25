@@ -1,9 +1,12 @@
 package io.skyroute.api.controller;
 
 import io.skyroute.api.model.dto.request.FlightSearchRequest;
+import io.skyroute.api.model.dto.request.RendezvousRequest;
 import io.skyroute.api.model.dto.response.FlightSearchPage;
 import io.skyroute.api.model.dto.response.FlightSearchResponse;
+import io.skyroute.api.model.dto.response.RendezvousResponse;
 import io.skyroute.api.service.FlightSearchService;
+import io.skyroute.api.service.RendezvousService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,9 +24,11 @@ public class FlightController {
     private static final int DEFAULT_SIZE = 10;
 
     private final FlightSearchService flightSearchService;
+    private final RendezvousService rendezvousService;
 
-    public FlightController(FlightSearchService flightSearchService) {
+    public FlightController(FlightSearchService flightSearchService, RendezvousService rendezvousService) {
         this.flightSearchService = flightSearchService;
+        this.rendezvousService = rendezvousService;
     }
 
     @PostMapping("/search")
@@ -58,5 +63,10 @@ public class FlightController {
                 totalPages,
                 airlines
         ));
+    }
+
+    @PostMapping("/rendezvous")
+    public ResponseEntity<RendezvousResponse> rendezvous(@RequestBody RendezvousRequest request) {
+        return ResponseEntity.ok(rendezvousService.search(request));
     }
 }
