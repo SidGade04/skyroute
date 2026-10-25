@@ -93,12 +93,19 @@ export interface FlightSearchPage extends PaginatedResponse<FlightSearchResponse
   airlines: AirlineOption[]
 }
 
-// rendezvous (still mock UI)
 export type OptimizationMode = 'min_total' | 'fair_split' | 'duration_balance'
 
 export interface RendezvousOrigin {
   airport: IataCode
   travelers: number
+}
+
+export interface RendezvousRequest {
+  origins: RendezvousOrigin[]
+  departureDate: string
+  returnDate?: string | null
+  cabinClass?: CabinClass
+  currency?: string
 }
 
 export interface HubOption {
@@ -107,5 +114,12 @@ export interface HubOption {
   totalCost: number
   variance: number
   avgDurationMinutes: number
-  perOrigin: { origin: IataCode; cost: number; durationMinutes: number }[]
+  perOrigin: { origin: IataCode; cost: number; durationMinutes: number; perPerson: number }[]
+}
+
+export interface RendezvousResponse {
+  currency: string
+  departureDate: string
+  returnDate: string | null
+  hubs: HubOption[]
 }
